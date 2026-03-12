@@ -274,5 +274,7 @@ legalPages: [
 
 ## onReady
 
-`(app: MapApp) => void` — Callback invoked after all
-layers have loaded.
+`(app: MapApp, info: { failedLayers: LayerDef[] }) => void`
+— Callback invoked after all layers have loaded.
+`failedLayers` contains the definitions of any layers
+whose GeoJSON files failed to fetch.

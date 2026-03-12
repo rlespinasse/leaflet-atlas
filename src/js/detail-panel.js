@@ -5,7 +5,7 @@ import { escapeHtml, renderValue, featureLink } from './helpers.js';
 // --- HTML builders ---
 
 export function sourceRow(source) {
-    return ['Sources', { __html: `<a href="${source.url}" target="_blank" rel="noopener">${source.name}<span class="cross-link-icon"> \u2197</span></a>` }];
+    return ['Sources', { __html: `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener">${escapeHtml(source.name)}<span class="cross-link-icon"> \u2197</span></a>` }];
 }
 
 export function buildDetail(title, layerId, groups, styles, allLayerDefs) {

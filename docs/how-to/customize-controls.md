@@ -187,8 +187,18 @@ Run code after all layers have loaded:
 
 ```js
 {
-  onReady: (app) => {
+  onReady: (app, { failedLayers }) => {
+    if (failedLayers.length > 0) {
+      console.warn('Some layers failed to load:',
+        failedLayers.map(d => d.label));
+    }
     console.log('All layers loaded');
   },
 }
 ```
+
+The second argument is an object with:
+
+| Property       | Type    | Description                    |
+| -------------- | ------- | ------------------------------ |
+| `failedLayers` | array   | Layer definitions that failed  |

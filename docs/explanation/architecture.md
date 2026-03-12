@@ -78,14 +78,15 @@ asynchronous data loading.
    page view, starts listening for map moves to update the
    hash, and fades out the loading overlay.
 1. **onReady** — calls the consumer's `onReady` callback
-   with the `MapApp` instance.
+   with the `MapApp` instance and a `{ failedLayers }`
+   info object.
 
 ## Layers drawer
 
 The layers drawer is a Leaflet control that renders as an
-`<aside>` appended to the `<main>` element (not to the map
-container). This lets it sit alongside the map rather than
-floating on top.
+`<aside>` appended to the map container's parent element
+(not to the map container itself). This lets it sit
+alongside the map rather than floating on top.
 
 Layers are grouped into collapsible sections. Each section
 has a group toggle that activates/deactivates all layers

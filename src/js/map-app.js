@@ -12,6 +12,10 @@ export class MapApp {
     constructor(config) {
         // -- State setup --
         this._config = config;
+        this._styles = config.styles || {};
+        this._patterns = config.patterns || {};
+        this._labels = config.labels || {};
+        this._maskLayerSourceId = config.maskLayer ? config.maskLayer.sourceLayerId : null;
         this._allLayerDefs = [
             ...config.layerGroups.flatMap(g => g.layers),
             ...(config.contextLayers || [])
@@ -22,6 +26,7 @@ export class MapApp {
         this._hoveredLayerId = null;
         this._mask = null;
         this._loadedCount = 0;
+        this._failedLayers = [];
         this._searchInput = null;
         this._helpOverlay = null;
         this._legalOverlay = null;
@@ -83,9 +88,18 @@ export class MapApp {
             options: { position: 'topleft' },
             onAdd: function () {
                 const div = L.DomUtil.create('div', 'title-overlay');
-                div.innerHTML = `<div class="title-text"><h1>${cfg.heading || ''}</h1>` +
-                    (cfg.subtitle ? `<p>${cfg.subtitle}</p>` : '') + `</div>` +
-                    (cfg.icon ? `<img src="${cfg.icon}" alt="" class="title-icon">` : '');
+                const textDiv = L.DomUtil.create('div', 'title-text', div);
+                const h1 = L.DomUtil.create('h1', '', textDiv);
+                h1.textContent = cfg.heading || '';
+                if (cfg.subtitle) {
+                    const p = L.DomUtil.create('p', '', textDiv);
+                    p.textContent = cfg.subtitle;
+                }
+                if (cfg.icon) {
+                    const img = L.DomUtil.create('img', 'title-icon', div);
+                    img.src = cfg.icon;
+                    img.alt = '';
+                }
                 L.DomEvent.disableClickPropagation(div);
                 return div;
             }
@@ -152,8 +166,7 @@ export class MapApp {
 
     _initLoadingOverlay() {
         const container = this._map.getContainer().parentElement;
-        const labels = this._config.labels || {};
-        const loadingText = labels.loading || 'Chargement des donnees...';
+        const loadingText = this._labels.loading || 'Chargement des donnees...';
 
         this._loadingOverlay = document.createElement('div');
         this._loadingOverlay.className = 'loading-overlay';
@@ -176,14 +189,13 @@ export class MapApp {
                 updateHash: () => this.updateHash(),
                 allLayerDefs: this._allLayerDefs,
                 trackEvent: (p, t) => this._analytics.trackEvent(p, t),
-                maskLayerSourceId: this._config.maskLayer ? this._config.maskLayer.sourceLayerId : null,
-                labels: this._config.labels
+                maskLayerSourceId: this._maskLayerSourceId,
+                labels: this._labels,
+                styles: this._styles,
+                patterns: this._patterns,
+                geometryTypes: this._config.geometryTypes || {}
             }
         );
-        // Pass styles/patterns/geometryTypes via options
-        this._layersDrawer.options._styles = this._config.styles || {};
-        this._layersDrawer.options._patterns = this._config.patterns || {};
-        this._layersDrawer.options._geometryTypes = this._config.geometryTypes || {};
         this._layersDrawer.addTo(this._map);
 
         const noBringToFrontLayers = new Set(
@@ -194,7 +206,7 @@ export class MapApp {
 
         const SearchControl = createSearchControl({
             map: this._map,
-            styles: this._config.styles || {},
+            styles: this._styles,
             searchIndex: this._searchIndex,
             allLayerDefs: this._allLayerDefs,
             detailBuilders: this._detailBuilders,
@@ -205,7 +217,7 @@ export class MapApp {
             setSelectedFeatureInfo: info => this._detailPanel.setSelectedFeatureInfo(info),
             searchInputRef: input => { this._searchInput = input; },
             trackEvent: (p, t) => this._analytics.trackEvent(p, t),
-            labels: this._config.labels,
+            labels: this._labels,
             noBringToFrontLayers
         });
         this._SearchControl = SearchControl;
@@ -220,7 +232,7 @@ export class MapApp {
             fitBounds: () => this.fitBounds(),
             SearchControl,
             trackEvent: (p, t) => this._analytics.trackEvent(p, t),
-            labels: this._config.labels
+            labels: this._labels
         });
 
         new BottomBarControl().addTo(this._map);
@@ -235,7 +247,7 @@ export class MapApp {
     }
 
     _buildShortcuts() {
-        const labels = this._config.labels || {};
+        const labels = this._labels;
         return this._config.shortcuts || [
             {
                 key: '?', label: labels.shortcutHelp || 'Aide raccourcis clavier',
@@ -327,7 +339,7 @@ export class MapApp {
     }
 
     _initHelpOverlay() {
-        const labels = this._config.labels || {};
+        const labels = this._labels;
         const shortcuts = this._shortcuts;
 
         const overlay = document.createElement('div');
@@ -383,7 +395,7 @@ export class MapApp {
     _initLegalOverlay() {
         const pages = this._config.legalPages;
         if (!pages || pages.length === 0) return;
-        const labels = this._config.labels || {};
+        const labels = this._labels;
 
         const overlay = document.createElement('div');
         overlay.className = 'legal-overlay';
@@ -498,7 +510,7 @@ export class MapApp {
 
     _initDetailBuilders() {
         const self = this;
-        const styles = this._config.styles || {};
+        const styles = this._styles;
         const allLayerDefs = this._allLayerDefs;
 
         const helpers = {
@@ -549,15 +561,12 @@ export class MapApp {
             fetch(this._config.reverseLinksUrl)
                 .then(r => r.ok ? r.json() : null)
                 .then(data => { this._reverseLinks = data; })
-                .catch(() => { /* reverse links unavailable */ });
+                .catch(err => { console.warn('Failed to load reverse links:', err); });
         }
 
-        const styles = this._config.styles || {};
-        const patterns = this._config.patterns || {};
         const tooltips = this._config.tooltips || {};
         const layerPanes = this._config.layerPanes || {};
         const borderClickLayers = this._config.borderClickLayers || {};
-        const maskLayerSourceId = this._config.maskLayer ? this._config.maskLayer.sourceLayerId : null;
 
         for (const def of this._allLayerDefs) {
             fetch(def.file)
@@ -566,24 +575,25 @@ export class MapApp {
                     return response.json();
                 })
                 .then(geojson => {
-                    this._processLayer(def, geojson, styles, patterns, tooltips, layerPanes, borderClickLayers, maskLayerSourceId);
+                    this._processLayer(def, geojson, tooltips, layerPanes, borderClickLayers);
                     this._onLayerLoaded();
                 })
                 .catch(err => {
                     console.warn(`Failed to load ${def.file}:`, err);
+                    this._failedLayers.push(def);
                     this._onLayerLoaded();
                 });
         }
     }
 
-    _bindFeatureEvents(interactionLayer, visualLayer, def, feature, geojson, styles, tooltips, isContextLayer) {
+    _bindFeatureEvents(interactionLayer, visualLayer, def, featureIndex, feature, tooltips, isContextLayer) {
+        const styles = this._styles;
         const builder = this._detailBuilders[def.id];
         if (builder) {
             interactionLayer.on('click', e => {
                 L.DomEvent.stopPropagation(e);
-                const idx = geojson.features.indexOf(feature);
                 this._analytics.trackEvent('event/feature', 'Feature click');
-                this._detailPanel.setSelectedFeatureInfo({ layerId: def.id, featureIndex: idx });
+                this._detailPanel.setSelectedFeatureInfo({ layerId: def.id, featureIndex });
                 this.showDetail(builder(feature.properties));
                 this.updateHash();
             });
@@ -624,10 +634,13 @@ export class MapApp {
         });
     }
 
-    _processLayer(def, geojson, styles, patterns, tooltips, layerPanes, borderClickLayers, maskLayerSourceId) {
+    _processLayer(def, geojson, tooltips, layerPanes, borderClickLayers) {
+        const styles = this._styles;
+        const patterns = this._patterns;
         const paneOpt = layerPanes[def.id] ? { pane: layerPanes[def.id] } : {};
         const hasBorderClick = !!borderClickLayers[def.id];
         const isContextLayer = this._contextLayerIds.has(def.id);
+        let featureIdx = 0;
 
         const layerOpts = {
             ...(hasBorderClick ? { interactive: false } : {}),
@@ -637,8 +650,9 @@ export class MapApp {
                 ...(patterns[def.id] ? { className: `layer-${def.id}` } : {})
             }),
             onEachFeature: (feature, layer) => {
+                const idx = featureIdx++;
                 if (!hasBorderClick) {
-                    this._bindFeatureEvents(layer, layer, def, feature, geojson, styles, tooltips, isContextLayer);
+                    this._bindFeatureEvents(layer, layer, def, idx, feature, tooltips, isContextLayer);
                 }
             }
         };
@@ -654,6 +668,8 @@ export class MapApp {
         // Border click layer
         if (borderClickLayers[def.id]) {
             const clickPane = borderClickLayers[def.id];
+            const visualLayers = layer.getLayers();
+            let clickIdx = 0;
             const clickLayer = L.geoJSON(geojson, {
                 style: () => ({
                     weight: 12,
@@ -662,16 +678,16 @@ export class MapApp {
                     pane: clickPane
                 }),
                 onEachFeature: (feature, lyr) => {
-                    const idx = geojson.features.indexOf(feature);
-                    const visualFeature = def._leafletLayer.getLayers()[idx];
-                    this._bindFeatureEvents(lyr, visualFeature, def, feature, geojson, styles, tooltips, isContextLayer);
+                    const idx = clickIdx++;
+                    const visualFeature = visualLayers[idx];
+                    this._bindFeatureEvents(lyr, visualFeature, def, idx, feature, tooltips, isContextLayer);
                 }
             });
             def._clickLayer = clickLayer;
         }
 
         // Mask layer
-        if (maskLayerSourceId && def.id === maskLayerSourceId && geojson.features && geojson.features[0]) {
+        if (this._maskLayerSourceId && def.id === this._maskLayerSourceId && geojson.features && geojson.features[0]) {
             this._mask = this._createMaskLayer(geojson.features[0].geometry.coordinates);
             if (def.active !== false) {
                 this._mask.addTo(this._map);
@@ -689,8 +705,8 @@ export class MapApp {
         this._loadedCount++;
         if (this._loadedCount < this._allLayerDefs.length) return;
 
-        const styles = this._config.styles || {};
-        const patterns = this._config.patterns || {};
+        const styles = this._styles;
+        const patterns = this._patterns;
         const searchableProps = this._config.searchableProps || {};
 
         // Update layer counts
@@ -728,9 +744,15 @@ export class MapApp {
             }, 400);
         }
 
+        // Warn about failed layers
+        if (this._failedLayers.length > 0) {
+            const names = this._failedLayers.map(d => d.label || d.id).join(', ');
+            console.error(`leaflet-atlas: failed to load layers: ${names}`);
+        }
+
         // Call onReady callback
         if (this._config.onReady) {
-            this._config.onReady(this);
+            this._config.onReady(this, { failedLayers: this._failedLayers });
         }
     }
 
@@ -809,8 +831,7 @@ export class MapApp {
         if (!this._map.hasLayer(def._leafletLayer)) {
             def._leafletLayer.addTo(this._map);
             if (def._clickLayer) def._clickLayer.addTo(this._map);
-            const maskSourceId = this._config.maskLayer ? this._config.maskLayer.sourceLayerId : null;
-            if (layerId === maskSourceId && this._mask) this._mask.addTo(this._map);
+            if (layerId === this._maskLayerSourceId && this._mask) this._mask.addTo(this._map);
             this._layersDrawer.syncLayerState(layerId, true);
         }
     }
@@ -818,15 +839,14 @@ export class MapApp {
     _setLayerVisibility(def, active) {
         if (!def._leafletLayer) return;
         const isActive = this._map.hasLayer(def._leafletLayer);
-        const maskSourceId = this._config.maskLayer ? this._config.maskLayer.sourceLayerId : null;
         if (active && !isActive) {
             def._leafletLayer.addTo(this._map);
             if (def._clickLayer) def._clickLayer.addTo(this._map);
-            if (def.id === maskSourceId && this._mask) this._mask.addTo(this._map);
+            if (def.id === this._maskLayerSourceId && this._mask) this._mask.addTo(this._map);
         } else if (!active && isActive) {
             this._map.removeLayer(def._leafletLayer);
             if (def._clickLayer) this._map.removeLayer(def._clickLayer);
-            if (def.id === maskSourceId && this._mask) this._map.removeLayer(this._mask);
+            if (def.id === this._maskLayerSourceId && this._mask) this._map.removeLayer(this._mask);
         }
         this._layersDrawer.syncLayerState(def.id, active);
     }
@@ -912,13 +932,8 @@ export class MapApp {
     findLayerByIndex(layerId, index) {
         const def = this._allLayerDefs.find(d => d.id === layerId);
         if (!def || !def._leafletLayer) return null;
-        let found = null;
-        let idx = 0;
-        def._leafletLayer.eachLayer(lyr => {
-            if (idx === index) found = lyr;
-            idx++;
-        });
-        return found;
+        const layers = def._leafletLayer.getLayers();
+        return (index >= 0 && index < layers.length) ? layers[index] : null;
     }
 
     findFeatureIndex(layerId, targetLayer) {
@@ -940,7 +955,7 @@ export class MapApp {
     }
 
     highlightFeature(layer, layerId, opts) {
-        _highlightFeature(layer, layerId, this._config.styles || {}, opts);
+        _highlightFeature(layer, layerId, this._styles, opts);
     }
 
     fitBounds() {

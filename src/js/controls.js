@@ -85,7 +85,8 @@ export function createSwatch(layerId, styles, patterns, geometryTypes) {
 // --- Layers Drawer ---
 
 export function createLayersDrawer(layerGroupsDef, contextLayersDef, baseLayersDef, baseLayerThumbnails, {
-    map, maskRef, hideDetail, updateHash, allLayerDefs, trackEvent, maskLayerSourceId, labels
+    map, maskRef, hideDetail, updateHash, allLayerDefs, trackEvent, maskLayerSourceId, labels,
+    styles: passedStyles, patterns: passedPatterns, geometryTypes: passedGeometryTypes
 }) {
     const _labels = labels || {};
     const layersLabel = _labels.layers || 'Couches';
@@ -105,6 +106,9 @@ export function createLayersDrawer(layerGroupsDef, contextLayersDef, baseLayersD
             this._groupLists = [];
             this._layerToggleBtns = {};
             this._groupSyncs = [];
+            this._styles = passedStyles;
+            this._patterns = passedPatterns;
+            this._geometryTypes = passedGeometryTypes;
         },
         onAdd: function () {
             const aside = L.DomUtil.create('aside', 'layers-drawer');
@@ -192,7 +196,7 @@ export function createLayersDrawer(layerGroupsDef, contextLayersDef, baseLayersD
                 });
             }
 
-            document.querySelector('main').appendChild(aside);
+            this._map.getContainer().parentElement.appendChild(aside);
             const dummy = L.DomUtil.create('div');
             dummy.style.display = 'none';
             return dummy;
@@ -291,9 +295,9 @@ export function createLayersDrawer(layerGroupsDef, contextLayersDef, baseLayersD
 
         _buildLayerRow: function (container, def, isContext) {
             const self = this;
-            const styles = self.options._styles;
-            const patterns = self.options._patterns;
-            const geometryTypes = self.options._geometryTypes;
+            const styles = self._styles;
+            const patterns = self._patterns;
+            const geometryTypes = self._geometryTypes;
             const row = L.DomUtil.create('div', 'drawer-layer-row', container);
             const color = styles[def.id] ? (styles[def.id].fillColor || styles[def.id].color) : '#888';
             row.style.setProperty('--layer-color', color);
@@ -402,11 +406,7 @@ export function createLayersDrawer(layerGroupsDef, contextLayersDef, baseLayersD
         }
     });
 
-    const drawer = new LayersDrawer(layerGroupsDef, contextLayersDef, baseLayersDef, {
-        _styles: allLayerDefs.reduce((acc, d) => { acc[d.id] = (acc[d.id] || {}); return acc; }, {}),
-        _patterns: {},
-        _geometryTypes: {}
-    });
+    const drawer = new LayersDrawer(layerGroupsDef, contextLayersDef, baseLayersDef);
     return drawer;
 }
 
@@ -518,9 +518,14 @@ export function createSearchControl({
                 }
                 items.forEach((item, idx) => {
                     const div = L.DomUtil.create('div', 'search-result-item', results);
+                    const titleDiv = L.DomUtil.create('div', 'search-result-title', div);
+                    const layerDot = L.DomUtil.create('span', 'search-result-layer', titleDiv);
                     const color = styles[item.layerId] ? (styles[item.layerId].fillColor || styles[item.layerId].color) : '#888';
-                    div.innerHTML = `<div class="search-result-title"><span class="search-result-layer" style="background:${color}"></span>${escapeHtml(item.title)}</div>`
-                        + `<div class="search-result-meta">${escapeHtml(item.meta)}</div>`;
+                    layerDot.style.background = color;
+                    const titleText = document.createTextNode(item.title);
+                    titleDiv.appendChild(titleText);
+                    const metaDiv = L.DomUtil.create('div', 'search-result-meta', div);
+                    metaDiv.textContent = item.meta;
                     div.addEventListener('click', () => selectResult(item));
                     div.addEventListener('mouseenter', () => {
                         setActive(idx);

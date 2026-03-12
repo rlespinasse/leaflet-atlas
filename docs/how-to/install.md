@@ -68,8 +68,9 @@ on the `LeafletAtlas` global:
 
 ## HTML structure
 
-leaflet-atlas expects the map container to be inside a
-`<main>` element:
+The map container must have a parent element. leaflet-atlas
+appends the layers drawer and detail panel to the map
+container's parent:
 
 ```html
 <main>
@@ -77,5 +78,5 @@ leaflet-atlas expects the map container to be inside a
 </main>
 ```
 
-The layers drawer and detail panel are appended to the
-`<main>` element alongside the map container.
+Any element can serve as the parent — `<main>`, `<div>`,
+`<section>`, etc.

@@ -54,9 +54,9 @@ Create `index.html`:
 </html>
 ```
 
-The map container must be inside a `<main>` element —
+The map container must have a parent element —
 leaflet-atlas attaches the detail panel and layers drawer
-to it.
+to the map container's parent.
 
 ## Step 3: Prepare GeoJSON data
 
@@ -205,8 +205,8 @@ Open the URL shown by Vite. You should see:
 
 ## What you've learned
 
-- How to structure the HTML container
-  (`<main>` > `<div id="map">`)
+- How to structure the HTML container (a parent element
+  wrapping `<div id="map">`)
 - How to define base layers, layer groups, and styles
 - How to enable search, tooltips, and detail panels
   via configuration
