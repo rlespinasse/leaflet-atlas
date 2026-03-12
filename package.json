@@ -1,6 +1,6 @@
 {
   "name": "leaflet-atlas",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "A config-driven Leaflet framework for building interactive GeoJSON map applications",
   "main": "./dist/leaflet-atlas.umd.js",
