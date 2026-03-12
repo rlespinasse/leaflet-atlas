@@ -3,12 +3,16 @@
   "version": "0.1.0",
   "type": "module",
   "description": "A config-driven Leaflet framework for building interactive GeoJSON map applications",
-  "main": "./dist/leaflet-atlas.umd.cjs",
+  "main": "./dist/leaflet-atlas.umd.js",
   "module": "./dist/leaflet-atlas.js",
+  "browser": "./dist/leaflet-atlas.umd.js",
+  "unpkg": "./dist/leaflet-atlas.umd.js",
+  "jsdelivr": "./dist/leaflet-atlas.umd.js",
+  "style": "./dist/leaflet-atlas.css",
   "exports": {
     ".": {
       "import": "./dist/leaflet-atlas.js",
-      "require": "./dist/leaflet-atlas.umd.cjs"
+      "require": "./dist/leaflet-atlas.umd.js"
     },
     "./css": "./dist/leaflet-atlas.css"
   },

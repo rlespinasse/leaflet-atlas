@@ -7,7 +7,10 @@ export default defineConfig({
       entry: resolve(__dirname, 'src/js/index.js'),
       name: 'LeafletAtlas',
       formats: ['es', 'umd'],
-      fileName: 'leaflet-atlas',
+      fileName: (format) => {
+        if (format === 'umd') return 'leaflet-atlas.umd.js';
+        return 'leaflet-atlas.js';
+      },
     },
     rollupOptions: {
       external: ['leaflet'],
