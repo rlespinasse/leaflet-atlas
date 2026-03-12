@@ -1,0 +1,95 @@
+/* --- Design tokens (defaults) ---
+   Consumers can override any --color-*, --shadow-*, --radius-* variable
+   in their own stylesheet loaded after the library CSS. */
+:root {
+    --color-brand: #0072BC;
+    --color-brand-bg: #e8f4fd;
+    --color-text: #333;
+    --color-text-secondary: #555;
+    --color-text-muted: #888;
+    --color-text-faint: #aaa;
+    --color-border: #ddd;
+    --color-border-light: #e0e0e0;
+    --color-border-faint: #f0f0f0;
+    --color-surface: #fff;
+    --color-surface-hover: #f5f5f5;
+    --color-surface-alt: #f0f0f0;
+    --color-surface-subtle: #f8f8f8;
+    --color-toggle-active: #e57373;
+    --color-toggle-inactive: #81c784;
+    --color-toggle-partial: #ffb74d;
+
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.15);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.2);
+    --shadow-panel: 0 -4px 16px rgba(0, 0, 0, 0.15);
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    --z-search-results: 1000;
+    --z-panel: 1500;
+    --z-loading: 2000;
+    --z-help-overlay: 2001;
+
+    --control-size: 48px;
+    --control-border: 2px solid rgba(0, 0, 0, 0.25);
+}
+
+/* --- Shared patterns --- */
+
+/* Reusable close button (detail panel, layers drawer) */
+.panel-actions {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    z-index: 1;
+}
+
+.panel-actions-sep {
+    width: 1px;
+    height: 1rem;
+    background: var(--color-border);
+}
+
+.panel-close-btn,
+.panel-nav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    line-height: 1;
+    padding: 0.25rem;
+    transition: color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.panel-close-btn {
+    font-size: 1.4rem;
+}
+
+.panel-close-btn:hover,
+.panel-nav-btn:hover:not(:disabled) {
+    color: var(--color-text);
+}
+
+.panel-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+/* Reusable drag handle (mobile bottom sheets) */
+.drag-handle {
+    display: none;
+    width: 36px;
+    height: 4px;
+    background: #ccc;
+    border-radius: 2px;
+    margin: 0.5rem auto 0;
+}

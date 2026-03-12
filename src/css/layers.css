@@ -1,0 +1,303 @@
+/* --- Layers drawer --- */
+
+.layers-drawer {
+    display: none;
+    width: 320px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    overflow-y: auto;
+    z-index: var(--z-panel);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.layers-drawer.open {
+    display: block;
+}
+
+.layers-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.layers-drawer-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Tabs */
+.layers-drawer-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--color-border-light);
+}
+
+.layers-drawer-tab {
+    flex: 1;
+    padding: 0.6rem 0.75rem;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    text-align: center;
+    transition: color 0.15s, border-color 0.15s;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.layers-drawer-tab:hover {
+    color: var(--color-text-secondary);
+}
+
+.layers-drawer-tab.active {
+    color: var(--color-brand);
+    border-bottom-color: var(--color-brand);
+}
+
+.layers-drawer-tab-content {
+    display: none;
+    padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.layers-drawer-tab-content.active {
+    display: block;
+}
+
+/* Layer groups in drawer */
+.drawer-group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    margin: 0.6rem 0 0.2rem 0;
+    padding: 0.2rem 0.3rem;
+    cursor: pointer;
+}
+
+.drawer-group-label {
+    flex: 1;
+}
+
+.drawer-group-header:first-child {
+    margin-top: 0.2rem;
+}
+
+.drawer-group-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.drawer-group-toggle::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid #999;
+    border-bottom: 1.5px solid #999;
+    transform: rotate(45deg);
+    margin-top: -2px;
+}
+
+.drawer-group-toggle.collapsed {
+    transform: rotate(-90deg);
+}
+
+.drawer-group-header:hover .drawer-group-toggle::before {
+    border-color: #666;
+}
+
+.drawer-group-list {
+    margin-bottom: 0.1rem;
+    padding-left: 0.2rem;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+}
+
+.drawer-group-list.collapsed {
+    max-height: 0 !important;
+    margin-bottom: 0;
+}
+
+/* Layer row */
+.drawer-layer-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    padding: 0.2rem 0.3rem;
+    border-radius: var(--radius-sm);
+    transition: background-color 0.1s;
+}
+
+.drawer-layer-row:hover {
+    background: var(--color-surface-hover);
+}
+
+/* Layer toggle button (+/-) */
+.layer-toggle-btn {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: none;
+    transition: color 0.15s;
+}
+
+.layer-toggle-btn.active {
+    color: var(--color-toggle-active);
+    border: 1.5px solid var(--color-toggle-active);
+}
+
+.layer-toggle-btn.inactive {
+    color: var(--color-toggle-inactive);
+    border: 1.5px solid var(--color-toggle-inactive);
+}
+
+.layer-toggle-btn.partial {
+    color: var(--color-toggle-partial);
+    border: 1.5px solid var(--color-toggle-partial);
+}
+
+/* Legend swatch */
+.layer-swatch {
+    flex-shrink: 0;
+}
+
+.layer-swatch-polygon {
+    width: 20px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.layer-swatch-line {
+    width: 20px;
+    height: 3px;
+    border-radius: 1px;
+}
+
+.layer-swatch-point {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.drawer-layer-label {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--color-text);
+}
+
+/* Feature count badge */
+.drawer-layer-count {
+    font-size: 0.65rem;
+    color: var(--color-text-faint);
+    font-weight: 400;
+}
+
+/* Base layer cards in drawer */
+.drawer-base-cards {
+    display: flex;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+}
+
+.drawer-base-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-subtle);
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+    font-size: 0.7rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    line-height: 1.2;
+    overflow: hidden;
+}
+
+.drawer-base-card:hover {
+    border-color: var(--color-text-faint);
+    background: var(--color-surface-alt);
+}
+
+.drawer-base-card.active {
+    border-color: var(--color-brand);
+    background: var(--color-brand-bg);
+    color: var(--color-brand);
+    font-weight: 600;
+    box-shadow: 0 0 0 1px var(--color-brand);
+}
+
+.drawer-base-card-thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    pointer-events: none;
+}
+
+.drawer-base-card-label {
+    pointer-events: none;
+}
+
+/* Layers toggle button indicator */
+.layers-toggle-btn.has-active::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background: var(--color-brand);
+    border-radius: 50%;
+    border: 1.5px solid var(--color-surface);
+}
+
+.layer-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1rem 2rem;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    z-index: 1000;
+    box-shadow: var(--shadow-md);
+}

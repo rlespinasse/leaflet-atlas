@@ -1,0 +1,43 @@
+{
+  "name": "leaflet-atlas",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A config-driven Leaflet framework for building interactive GeoJSON map applications",
+  "main": "./dist/leaflet-atlas.umd.cjs",
+  "module": "./dist/leaflet-atlas.js",
+  "exports": {
+    ".": {
+      "import": "./dist/leaflet-atlas.js",
+      "require": "./dist/leaflet-atlas.umd.cjs"
+    },
+    "./css": "./dist/leaflet-atlas.css"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "leaflet": "^1.9.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  },
+  "keywords": [
+    "leaflet",
+    "map",
+    "atlas",
+    "geojson",
+    "interactive-map"
+  ],
+  "author": "rlespinasse",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rlespinasse/leaflet-atlas.git"
+  }
+}
