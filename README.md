@@ -119,7 +119,9 @@ const app = new MapApp({
   - [Configure layers](docs/how-to/configure-layers.md)
   - [Configure detail panels](docs/how-to/configure-detail-panels.md)
   - [Customize controls](docs/how-to/customize-controls.md)
-- [Architecture](docs/explanation/architecture.md)
+- **Explanation**
+  - [Architecture](docs/explanation/architecture.md)
+  - [Release process](docs/explanation/release-process.md)
 - **Reference**
   - [Configuration](docs/reference/configuration.md)
   - [API](docs/reference/api.md)

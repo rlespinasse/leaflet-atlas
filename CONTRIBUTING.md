@@ -74,6 +74,20 @@ dist/           Built output (not committed)
 
 CI will automatically run tests, linting, and build checks on your PR.
 
+## Releases
+
+Releases are fully automated. When your pull request is
+merged to `main`, semantic-release analyzes the commit
+messages and publishes a new version if warranted.
+
+This is why
+[Conventional Commits](https://www.conventionalcommits.org/)
+matter — `feat:` triggers a minor bump, `fix:` triggers a
+patch bump, and `BREAKING CHANGE` triggers a major bump.
+
+See [Release process](docs/explanation/release-process.md)
+for details on how the pipeline works.
+
 ## License
 
 By contributing, you agree that your contributions will be licensed
