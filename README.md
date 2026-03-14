@@ -124,6 +124,10 @@ const app = new MapApp({
   - [Configuration](docs/reference/configuration.md)
   - [API](docs/reference/api.md)
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+
 ## License
 
 [MIT](LICENSE)
