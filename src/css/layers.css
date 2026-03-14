@@ -227,12 +227,14 @@
 /* Base layer cards in drawer */
 .drawer-base-cards {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     padding-top: 0.25rem;
 }
 
 .drawer-base-card {
-    flex: 1;
+    flex: 1 1 calc((100% - 1rem) / 3);
+    max-width: calc((100% - 1rem) / 3);
     display: flex;
     flex-direction: column;
     align-items: center;

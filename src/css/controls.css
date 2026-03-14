@@ -72,6 +72,15 @@
     align-items: flex-end;
 }
 
+.bottom-pickers-bar > *,
+.bottom-pickers-bar input {
+    box-sizing: border-box;
+}
+
+.bottom-pickers-bar .leaflet-bar {
+    margin: 0;
+}
+
 /* Unified zoom bar — overrides Leaflet defaults */
 .bottom-pickers-bar .unified-zoom {
     display: flex;
