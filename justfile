@@ -10,12 +10,12 @@ build:
 dev:
     npm run dev
 
-# Lint markdown documentation
-markdownlint:
-    npx markdownlint-cli2 README.md "docs/**/*.md"
+# Lint all sources (JS + markdown)
+lint:
+    npm run lint
 
 # Build and dry-run pack to verify package contents
-check: build markdownlint
+check: build lint
     npm pack --dry-run
 
 # Publish to npm
