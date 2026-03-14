@@ -282,6 +282,14 @@ export class MapApp {
                 event: 'event/shortcut/layers', eventLabel: 'Shortcut layers drawer'
             },
             {
+                key: 'g', label: labels.shortcutLayerFilter || 'Filtrer les couches',
+                action: (e) => {
+                    e.preventDefault();
+                    this._layersDrawer.focusFilter();
+                },
+                event: 'event/shortcut/layer-filter', eventLabel: 'Shortcut layer filter'
+            },
+            {
                 key: 'p', label: labels.shortcutPanel || 'Panneau (ouvrir/fermer)',
                 action: () => {
                     if (this._detailPanel.isOpen()) {

@@ -1,7 +1,7 @@
 // --- Leaflet UI controls ---
 
 import L from 'leaflet';
-import { setToggleState, escapeHtml, getHoverStyle } from './helpers.js';
+import { setToggleState, escapeHtml, getHoverStyle, normalizeText } from './helpers.js';
 import { buildPatternContent } from './patterns.js';
 
 // --- Legend swatch ---
@@ -139,6 +139,7 @@ export function createLayersDrawer(layerGroupsDef, contextLayersDef, baseLayersD
             const contentCouches = L.DomUtil.create('div', 'layers-drawer-tab-content active', aside);
             const contentFond = L.DomUtil.create('div', 'layers-drawer-tab-content', aside);
 
+
             tabCouches.addEventListener('click', () => {
                 tabCouches.classList.add('active');
                 tabFond.classList.remove('active');
@@ -150,6 +151,37 @@ export function createLayersDrawer(layerGroupsDef, contextLayersDef, baseLayersD
                 tabCouches.classList.remove('active');
                 contentFond.classList.add('active');
                 contentCouches.classList.remove('active');
+            });
+
+            // Filter bar
+            const filterBar = L.DomUtil.create('div', 'drawer-filter-bar', contentCouches);
+            const filterInput = L.DomUtil.create('input', 'drawer-filter-input', filterBar);
+            filterInput.type = 'text';
+            filterInput.placeholder = 'Filtrer les couches...';
+            filterInput.setAttribute('aria-label', 'Filtrer les couches');
+            const filterClearBtn = L.DomUtil.create('button', 'drawer-filter-clear', filterBar);
+            filterClearBtn.type = 'button';
+            filterClearBtn.innerHTML = '&times;';
+            filterClearBtn.title = 'Effacer le filtre';
+            this._filterInput = filterInput;
+            this._filterClearBtn = filterClearBtn;
+            this._collapsedSnapshot = null;
+
+            filterInput.addEventListener('input', () => {
+                self._applyFilter(filterInput.value);
+            });
+            filterClearBtn.addEventListener('click', () => {
+                filterInput.value = '';
+                self._applyFilter('');
+                filterInput.focus();
+            });
+            filterInput.addEventListener('keydown', e => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    filterInput.value = '';
+                    self._applyFilter('');
+                    filterInput.focus();
+                }
             });
 
             this._buildGroupSection(contentCouches, 'Contexte', this._contextLayers, true);
@@ -371,6 +403,10 @@ export function createLayersDrawer(layerGroupsDef, contextLayersDef, baseLayersD
         isOpen: function () {
             return this._aside.classList.contains('open');
         },
+        focusFilter: function () {
+            if (!this.isOpen()) this.open();
+            if (this._filterInput) this._filterInput.focus();
+        },
         updateCount: function (layerId, count) {
             if (this._countSpans[layerId]) {
                 this._countSpans[layerId].textContent = count;
@@ -403,6 +439,71 @@ export function createLayersDrawer(layerGroupsDef, contextLayersDef, baseLayersD
                 if (isOnMap !== wasDefault) hasNonDefault = true;
             }
             this._toggleBtn.classList.toggle('has-active', hasNonDefault);
+        },
+        _applyFilter: function (rawQuery) {
+            const query = normalizeText(rawQuery.trim());
+            const hasQuery = query.length > 0;
+
+            // Toggle clear button visibility
+            this._filterClearBtn.classList.toggle('visible', hasQuery);
+
+            // Snapshot collapsed state on first filter keystroke
+            if (hasQuery && !this._collapsedSnapshot) {
+                trackEvent('event/layer-filter', 'Layer filter');
+                this._collapsedSnapshot = new Map();
+                for (const gl of this._groupLists) {
+                    this._collapsedSnapshot.set(gl, gl.classList.contains('collapsed'));
+                }
+            }
+
+            for (const gl of this._groupLists) {
+                const header = gl.previousElementSibling; // .drawer-group-header
+                const rows = gl.querySelectorAll('.drawer-layer-row');
+                let matchCount = 0;
+
+                for (const row of rows) {
+                    const label = row.querySelector('.drawer-layer-label');
+                    if (!label) continue;
+                    const text = normalizeText(label.textContent);
+                    const matches = !hasQuery || text.includes(query);
+                    row.style.display = matches ? '' : 'none';
+                    if (matches) matchCount++;
+                }
+
+                if (hasQuery) {
+                    const visible = matchCount > 0;
+                    header.style.display = visible ? '' : 'none';
+                    gl.style.display = visible ? '' : 'none';
+                    if (visible) {
+                        gl.classList.remove('collapsed');
+                        if (header) {
+                            const arrow = header.querySelector('.drawer-group-toggle');
+                            if (arrow) arrow.classList.remove('collapsed');
+                        }
+                        gl.style.maxHeight = `${gl.scrollHeight}px`;
+                    }
+                } else {
+                    header.style.display = '';
+                    gl.style.display = '';
+                }
+            }
+
+            // Restore collapsed state when filter is cleared
+            if (!hasQuery && this._collapsedSnapshot) {
+                for (const [gl, wasCollapsed] of this._collapsedSnapshot) {
+                    const header = gl.previousElementSibling;
+                    const arrow = header ? header.querySelector('.drawer-group-toggle') : null;
+                    if (wasCollapsed) {
+                        gl.classList.add('collapsed');
+                        if (arrow) arrow.classList.add('collapsed');
+                    } else {
+                        gl.classList.remove('collapsed');
+                        if (arrow) arrow.classList.remove('collapsed');
+                        gl.style.maxHeight = `${gl.scrollHeight}px`;
+                    }
+                }
+                this._collapsedSnapshot = null;
+            }
         }
     });
 
