@@ -50,6 +50,63 @@ export function setToggleState(btn, active, scope, partial, labels) {
     btn.title = `${active ? l.hide : l.show} ${scope}`;
 }
 
+// --- Point-in-polygon (ray casting) ---
+
+function pointInRing(point, ring) {
+    let inside = false;
+    const [px, py] = point;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [xi, yi] = ring[i];
+        const [xj, yj] = ring[j];
+        if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) {
+            inside = !inside;
+        }
+    }
+    return inside;
+}
+
+export function pointInGeometry(latlng, geometry) {
+    const point = [latlng.lng, latlng.lat];
+    const type = geometry.type;
+    const coords = geometry.coordinates;
+    if (type === 'Polygon') {
+        if (!pointInRing(point, coords[0])) return false;
+        for (let h = 1; h < coords.length; h++) {
+            if (pointInRing(point, coords[h])) return false;
+        }
+        return true;
+    }
+    if (type === 'MultiPolygon') {
+        for (const poly of coords) {
+            if (!pointInRing(point, poly[0])) continue;
+            let inHole = false;
+            for (let h = 1; h < poly.length; h++) {
+                if (pointInRing(point, poly[h])) { inHole = true; break; }
+            }
+            if (!inHole) return true;
+        }
+    }
+    return false;
+}
+
+export function featureBoundsArea(feature) {
+    const coords = feature.geometry.coordinates;
+    let allCoords = [];
+    const type = feature.geometry.type;
+    if (type === 'Polygon') allCoords = coords[0];
+    else if (type === 'MultiPolygon') coords.forEach(p => allCoords.push(...p[0]));
+    else return Infinity;
+    if (allCoords.length === 0) return Infinity;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const [x, y] of allCoords) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+    }
+    return (maxX - minX) * (maxY - minY);
+}
+
 // --- Tile thumbnail URL ---
 
 export function buildTileThumbnailUrl(urlTemplate, center, zoom, options) {

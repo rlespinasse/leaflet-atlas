@@ -1,7 +1,7 @@
 // --- MapApp: main orchestrator class ---
 
 import L from 'leaflet';
-import { escapeHtml, getHoverStyle, highlightFeature as _highlightFeature, setToggleState, buildTileThumbnailUrl } from './helpers.js';
+import { escapeHtml, getHoverStyle, highlightFeature as _highlightFeature, pointInGeometry, featureBoundsArea, buildTileThumbnailUrl } from './helpers.js';
 import { createAnalytics } from './analytics.js';
 import { injectPatterns, injectPatternCSS } from './patterns.js';
 import { parseHash, buildHash } from './hash-state.js';
@@ -604,15 +604,56 @@ export class MapApp {
         }
     }
 
+    _findSmallestPolygonAt(latlng, clickedDef, clickedFeature, clickedIndex) {
+        const geomTypes = this._config.geometryTypes || {};
+        let best = { def: clickedDef, feature: clickedFeature, index: clickedIndex, area: featureBoundsArea(clickedFeature) };
+
+        for (const def of this._allLayerDefs) {
+            if (!def._leafletLayer || !this._map.hasLayer(def._leafletLayer)) continue;
+            const gt = geomTypes[def.id];
+            if (gt !== 'polygon' && gt !== undefined) continue;
+            if (def.id === clickedDef.id) continue;
+
+            const builder = this._detailBuilders[def.id] || this._detailBuilders.__default;
+            if (!builder) continue;
+
+            const layers = def._leafletLayer.getLayers();
+            for (let i = 0; i < layers.length; i++) {
+                const f = layers[i].feature;
+                if (!f || !f.geometry) continue;
+                const gtype = f.geometry.type;
+                if (gtype !== 'Polygon' && gtype !== 'MultiPolygon') continue;
+                if (!pointInGeometry(latlng, f.geometry)) continue;
+                const area = featureBoundsArea(f);
+                if (area < best.area) {
+                    best = { def, feature: f, index: i, area };
+                }
+            }
+        }
+        return best;
+    }
+
     _bindFeatureEvents(interactionLayer, visualLayer, def, featureIndex, feature, tooltips, isContextLayer) {
         const styles = this._styles;
-        const builder = this._detailBuilders[def.id];
+        const geomTypes = this._config.geometryTypes || {};
+        const isPolygon = !geomTypes[def.id] || geomTypes[def.id] === 'polygon';
+        const builder = this._detailBuilders[def.id] || this._detailBuilders.__default;
         if (builder) {
             interactionLayer.on('click', e => {
                 L.DomEvent.stopPropagation(e);
                 this._analytics.trackEvent('event/feature', 'Feature click');
-                this._detailPanel.setSelectedFeatureInfo({ layerId: def.id, featureIndex });
-                this.showDetail(builder(feature.properties));
+
+                let targetDef = def, targetFeature = feature, targetIndex = featureIndex;
+                if (isPolygon) {
+                    const best = this._findSmallestPolygonAt(e.latlng, def, feature, featureIndex);
+                    targetDef = best.def;
+                    targetFeature = best.feature;
+                    targetIndex = best.index;
+                }
+
+                const targetBuilder = this._detailBuilders[targetDef.id] || this._detailBuilders.__default;
+                this._detailPanel.setSelectedFeatureInfo({ layerId: targetDef.id, featureIndex: targetIndex });
+                this.showDetail(targetBuilder(targetFeature.properties, targetDef.id, targetIndex));
                 this.updateHash();
             });
         }
@@ -652,10 +693,48 @@ export class MapApp {
         });
     }
 
+    _getAutoPane(def, geojson) {
+        const geomTypes = this._config.geometryTypes || {};
+        const geomType = geomTypes[def.id] || 'polygon';
+
+        // Points and lines go above polygons; no auto-pane needed if pane is manually set
+        if (geomType === 'point') return { pane: this._getOrCreatePane(def.id, 650) };
+        if (geomType === 'line') return { pane: this._getOrCreatePane(def.id, 500) };
+
+        // For polygons, compute average feature bounding box area — smaller = higher z-index
+        const features = geojson.features || [];
+        if (features.length === 0) return {};
+        let totalArea = 0;
+        let count = 0;
+        for (const f of features) {
+            if (!f.geometry) continue;
+            const a = featureBoundsArea(f);
+            if (a !== Infinity) {
+                totalArea += a;
+                count++;
+            }
+        }
+        if (count === 0) return {};
+        const avgArea = totalArea / count;
+        // Map average area to z-index: large polygons ~401, small polygons ~499
+        const zIndex = Math.round(499 - Math.min(avgArea, 10) / 10 * 98);
+        return { pane: this._getOrCreatePane(def.id, zIndex) };
+    }
+
+    _getOrCreatePane(name, zIndex) {
+        const paneName = `auto-${name}`;
+        if (!this._map.getPane(paneName)) {
+            const pane = this._map.createPane(paneName);
+            pane.style.zIndex = zIndex;
+        }
+        return paneName;
+    }
+
     _processLayer(def, geojson, tooltips, layerPanes, borderClickLayers) {
         const styles = this._styles;
         const patterns = this._patterns;
-        const paneOpt = layerPanes[def.id] ? { pane: layerPanes[def.id] } : {};
+        const manualPane = layerPanes[def.id] ? { pane: layerPanes[def.id] } : null;
+        const paneOpt = manualPane || this._getAutoPane(def, geojson);
         const hasBorderClick = !!borderClickLayers[def.id];
         const isContextLayer = this._contextLayerIds.has(def.id);
         let featureIdx = 0;
@@ -829,10 +908,10 @@ export class MapApp {
                 this.ensureLayerVisible(layerId);
                 const found = this.findLayerByIndex(layerId, featureIndex);
                 if (found) {
-                    const builder = this._detailBuilders[layerId];
+                    const builder = this._detailBuilders[layerId] || this._detailBuilders.__default;
                     if (builder) {
                         this._detailPanel.setSelectedFeatureInfo({ layerId, featureIndex });
-                        this.showDetail(builder(found.feature.properties));
+                        this.showDetail(builder(found.feature.properties, layerId, featureIndex));
                     }
                 }
             }
@@ -918,7 +997,7 @@ export class MapApp {
     }
 
     showFeatureDetail(layerId, featureIndex, properties) {
-        const builder = this._detailBuilders[layerId];
+        const builder = this._detailBuilders[layerId] || this._detailBuilders.__default;
         if (!builder) return;
         let props = properties;
         if (!props) {
@@ -927,12 +1006,12 @@ export class MapApp {
         }
         if (!props) return;
         this._detailPanel.setSelectedFeatureInfo({ layerId, featureIndex });
-        this.showDetail(builder(props));
+        this.showDetail(builder(props, layerId, featureIndex));
         this.updateHash();
     }
 
     getDetailBuilder(layerId) {
-        return this._detailBuilders[layerId];
+        return this._detailBuilders[layerId] || this._detailBuilders.__default;
     }
 
     findLayerByProperty(layerId, matchFn) {
