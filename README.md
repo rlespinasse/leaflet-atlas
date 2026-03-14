@@ -27,12 +27,12 @@ import 'leaflet/dist/leaflet.css';
 <link rel="stylesheet"
   href="https://unpkg.com/leaflet@1.9/dist/leaflet.css" />
 <link rel="stylesheet"
-  href="https://unpkg.com/leaflet-atlas@0.1.0/dist/leaflet-atlas.css" />
+  href="https://unpkg.com/leaflet-atlas@0.1.1/dist/leaflet-atlas.css" />
 <script
   src="https://unpkg.com/leaflet@1.9/dist/leaflet.js">
 </script>
 <script
-  src="https://unpkg.com/leaflet-atlas@0.1.0/dist/leaflet-atlas.umd.js">
+  src="https://unpkg.com/leaflet-atlas@0.1.1/dist/leaflet-atlas.umd.js">
 </script>
 ```
 
