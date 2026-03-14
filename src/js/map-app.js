@@ -1,7 +1,7 @@
 // --- MapApp: main orchestrator class ---
 
 import L from 'leaflet';
-import { escapeHtml, getHoverStyle, highlightFeature as _highlightFeature, setToggleState } from './helpers.js';
+import { escapeHtml, getHoverStyle, highlightFeature as _highlightFeature, setToggleState, buildTileThumbnailUrl } from './helpers.js';
 import { createAnalytics } from './analytics.js';
 import { injectPatterns, injectPatternCSS } from './patterns.js';
 import { parseHash, buildHash } from './hash-state.js';
@@ -67,10 +67,16 @@ export class MapApp {
 
     _initBaseLayers() {
         const cfg = this._config.baseLayers || {};
+        const mapCfg = this._config.map || {};
+        const center = mapCfg.center || [0, 0];
+        const thumbZoom = 10;
+
         for (const [name, def] of Object.entries(cfg)) {
             this._baseLayers[name] = L.tileLayer(def.url, def.options || {});
             if (def.thumbnailUrl) {
                 this._baseLayerThumbnails[name] = def.thumbnailUrl;
+            } else {
+                this._baseLayerThumbnails[name] = this._buildTileThumbnailUrl(def.url, center, thumbZoom, def.options);
             }
         }
 
@@ -78,6 +84,10 @@ export class MapApp {
         if (this._baseLayers[defaultName]) {
             this._baseLayers[defaultName].addTo(this._map);
         }
+    }
+
+    _buildTileThumbnailUrl(urlTemplate, center, zoom, options) {
+        return buildTileThumbnailUrl(urlTemplate, center, zoom, options);
     }
 
     _initTitle() {

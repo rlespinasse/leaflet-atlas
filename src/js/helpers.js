@@ -50,6 +50,25 @@ export function setToggleState(btn, active, scope, partial, labels) {
     btn.title = `${active ? l.hide : l.show} ${scope}`;
 }
 
+// --- Tile thumbnail URL ---
+
+export function buildTileThumbnailUrl(urlTemplate, center, zoom, options) {
+    const lat = center[0];
+    const lng = center[1];
+    const n = Math.pow(2, zoom);
+    const x = Math.floor((lng + 180) / 360 * n);
+    const y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n);
+
+    let url = urlTemplate
+        .replace('{z}', zoom)
+        .replace('{x}', x)
+        .replace('{y}', y);
+
+    const subdomains = (options && options.subdomains) || 'abc';
+    url = url.replace('{s}', subdomains[0]);
+
+    return url;
+}
 // --- Hover style ---
 
 export function getHoverStyle(layerId, styles) {
