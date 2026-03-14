@@ -88,28 +88,51 @@ const app = new MapApp({
 
 ## Features
 
+### Layers & styling
+
 - **Layer management** — toggle layer groups and
-  individual layers via a slide-out drawer
+  individual layers via a slide-out drawer with feature
+  counts and in-drawer filtering
+- **Context layers** — dedicated drawer section for
+  reference layers that stay in the background
 - **Multiple base layers** — switch between tile providers
   with thumbnail cards
-- **Search** — full-text search across configurable
-  feature properties
-- **Detail panels** — click a feature to open a detail
-  panel with navigation history
-- **Cross-links** — link between features across layers
+- **SVG fill patterns** — diagonal, crosshatch, dots,
+  stipple, circles, and horizontal line fills
+- **Auto z-index sorting** — layers are ordered
+  automatically by geometry type and feature size
+- **Mask layer** — dim areas outside a boundary polygon
+
+### Search & interaction
+
+- **Search** — multi-term full-text search across
+  configurable feature properties, with hover highlighting
+- **Tooltips** — per-layer hover tooltips on map features
+- **Detail panels** — click a feature to open a resizable
+  detail panel with back/forward navigation history
+- **Cross-links** — navigate between related features
+  across layers, with reverse-link support
+
+### Navigation & state
+
 - **Keyboard shortcuts** — fully configurable, with a
   built-in help overlay
 - **URL hash state** — active layers, map view, base
   layer, and selected feature are persisted in the URL
-- **SVG patterns** — diagonal, crosshatch, dots, stipple,
-  circles, and horizontal line fills
-- **Mask layer** — dim areas outside a boundary polygon
+  for deep linking
+
+### Customization
+
+- **i18n-ready** — all UI labels are overridable via the
+  `labels` config
+- **Detail builders** — custom HTML builders per layer
+  with cross-layer query helpers
+- **Title overlay** — configurable heading, subtitle, and
+  icon
 - **Analytics** — pluggable analytics (GoatCounter
   supported out of the box)
 - **Legal pages** — tabbed overlay for legal notices
 - **Responsive** — adapts to mobile viewports
-- **i18n-ready** — all UI labels are overridable via the
-  `labels` config
 
 ## Documentation
 
