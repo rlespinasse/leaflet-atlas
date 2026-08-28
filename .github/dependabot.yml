@@ -4,6 +4,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 5
+    commit-message:
+      prefix: build
+      include: scope
     groups:
       github-actions:
         patterns:
@@ -15,6 +20,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 5
+    commit-message:
+      prefix: build
+      include: scope
+    open-pull-requests-limit: 10
     groups:
       npm-minor-patch:
         patterns:
